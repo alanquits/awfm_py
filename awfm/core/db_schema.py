@@ -18,17 +18,12 @@ create table settings (
   , time_unit text references fk_time_units (time_unit)
   , discharge_unit text references fk_discharge_units (discharge_unit)
   , aquifer_drawdown_model text references fk_aquifer_drawdown_models (aquifer_drawdown_model)
-  , well_loss_turbulant_on boolean default false
-  , well_loss_laminar_on boolean default false
-  , well_loss_transient_on boolean default false
-  , h0_transient_on boolean default false
 );
 
 insert into settings
-(length_unit, time_unit, discharge_unit, aquifer_drawdown_model, well_loss_turbulant_on,
-    well_loss_laminar_on, well_loss_transient_on, h0_transient_on)
+(length_unit, time_unit, discharge_unit, aquifer_drawdown_model)
 values
-('meters', 'days', 'm3/day', 'theis', 0, 0, 0, 0);
+('meters', 'days', 'm3/day', 'theis');
 
 create table wells (
     name text primary key

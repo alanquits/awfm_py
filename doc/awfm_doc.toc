@@ -1,0 +1,16 @@
+\contentsline {chapter}{Mathematical Basis}{11}{chapter*.5}
+\contentsline {section}{Forward Model}{11}{section*.6}
+\contentsline {section}{Inverse Model}{11}{section*.7}
+\contentsline {chapter}{Installation}{13}{chapter*.8}
+\contentsline {section}{Windows}{13}{section*.9}
+\contentsline {section}{Apple}{13}{section*.10}
+\contentsline {section}{Linux}{14}{section*.11}
+\contentsline {chapter}{Classes}{15}{chapter*.12}
+\contentsline {section}{Timeseries Class}{15}{section*.13}
+\contentsline {section}{Well Class}{15}{section*.14}
+\contentsline {section}{Dataframe Class}{17}{section*.15}
+\contentsline {chapter}{Examples}{19}{chapter*.16}
+\contentsline {section}{Example: Reducing Timeseries Data}{19}{section*.17}
+\contentsline {section}{Example: Simple Forward Model}{19}{section*.18}
+\contentsline {section}{Example: Custom Dataframe}{21}{section*.19}
+\contentsfinish 

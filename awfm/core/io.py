@@ -3,7 +3,8 @@ import sqlite3
 from .db_schema import schema
 from . import transientparameter as tp
 from . import Well, Model
-from .aquiferdrawdownmodel import TheisDrawdownModel, HantushJacobDrawdownModel
+# from .aquiferdrawdownmodel import TheisDrawdownModel, HantushJacobDrawdownModel
+from .aquiferdrawdownmodel import AquiferDrawdownModel
 
 def delete_file_if_exists(infile):
     if os.path.exists(infile):
@@ -53,9 +54,6 @@ def save_model(model, outfile):
 
     set_setting("aquifer_drawdown_model", model.aquifer_drawdown_model.name())
 
-    for flag_name in model.flags.keys():
-        set_setting(flag_name, model.flags[flag_name])
-
     for w in model.wells_as_list():
         sql = """
         insert into wells (name, x, y, rw, h0, b, c)
@@ -66,18 +64,18 @@ def save_model(model, outfile):
                 w.c.to_sql_string())
         curs.execute(sql)
 
-    def set_aquifer_drawdown_parameter(name, value):
-        sql = "update aquifer_drawdown_model_parameters set value=%lf where name='%s'" \
-            %(value, name)
+    curs.execute("delete from aquifer_drawdown_model_parameters")
+    def insert_aquifer_drawdown_parameter(name, value):
+        sql = """
+            insert into aquifer_drawdown_model_parameters
+            (name, value)
+            values
+            ('%s', %lf) """ %(name, value)
         curs.execute(sql)
 
     s_aq = model.aquifer_drawdown_model
-    if s_aq.name() in ('theis', 'hantush-jacob'):
-        set_aquifer_drawdown_parameter('S', s_aq.S)
-        set_aquifer_drawdown_parameter('T', s_aq.T)
-
-    if s_aq.name() == ('hantush-jacob'):
-        set_aquifer_drawdown_parameter('m*/K*', s_aq.m_over_K)
+    for param_name in s_aq.params.keys():
+        insert_aquifer_drawdown_parameter(param_name, s_aq.params[param_name])
 
     conn.commit()
 
@@ -95,8 +93,6 @@ def open_model(infile):
          , time_unit
          , discharge_unit
          , aquifer_drawdown_model
-         , well_loss_turbulant_on
-         , well_loss_laminar_on
     from settings
     """
 
@@ -110,22 +106,14 @@ def open_model(infile):
     model.units["time"] = record[1]
     model.units["discharge"] = record[2]
     aquifer_drawdown_model_name = record[3] # complete later
-    model.flags["well_loss_turbulant_on"] = record[4]
-    model.flags["well_loss_laminar_on"] = record[5]
 
     # Read aquifer drawdown model parameters
     params = {}
     curs.execute("select name, value from aquifer_drawdown_model_parameters")
     for name, value in curs.fetchall():
         params[name] = value
-
-    if aquifer_drawdown_model_name == "theis":
-        model.aquifer_drawdown_model = \
-            TheisDrawdownModel(S=params["S"], T=params["T"])
-    elif aquifer_drawdown_model_name == "hantush-jacob":
-        model.aquifer_drawdown_model = \
-            HantushJacobDrawdownModel(S=params["S"], T=params["T"], m_over_K=params["m*/K*"])
-    else:
+    model.aquifer_drawdown_model = AquiferDrawdownModel(aquifer_drawdown_model_name, params)
+    if model.aquifer_drawdown_model is None:
         return False
 
     # Read wells

@@ -1,4 +1,4 @@
-from .abstractdataframe import AbstractDataFrame
+from .abstractdataframe import AbstractDataframe
 
 class XlsxDataframe(AbstractDataframe):
     def __init__(self, infile):
@@ -19,30 +19,17 @@ class XlsxDataframe(AbstractDataframe):
         }
 
     def get_value(self, column, column_type):
-        default_values = {
-            float: -9999.0,
-            int: -9999,
-            str: "NULL"
-        }
-
         value = self.ws.cell(self.reading_row, column).value
         try:
             return column_type(value)
         except:
+            default = self.default_value_for_type(column_type)
             msg = "row %d, column %d would not cast to %s. Setting to %s" \
-                %(self.reading_row+1, column+1, str(column_type), default_values[column_type])
-            self.errors.append(["Warning": msg])
-
-    def header_index(self, header):
-        for idx, hdr in enumerate(self.headers()):
-            if hdr == header:
-                return idx
-
-        self.errors.append(["Fatal": "Attempted to get index of header %s, which does not exist." %header])
-        return -1
+                %(self.reading_row+1, column+1, str(column_type), str(default))
+            self.errors.append(["Warning", msg])
 
     def next_row(self):
-        if self.reading_row = ws.nrows:
+        if self.reading_row == ws.nrows:
             return None
         else:
             self.reading_row += 1
@@ -53,6 +40,9 @@ class XlsxDataframe(AbstractDataframe):
 
     def spin_up(self):
         self.reading_row = self.config["start row"][1]
+
+    def set_table(self, table_name):
+        self.ws = wb.sheet_by_name(table_name)
 
     def tables(self):
         return self.wb.sheet_names()

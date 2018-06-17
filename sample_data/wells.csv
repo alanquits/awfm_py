@@ -1,0 +1,3 @@
+well_id,x_coord,y_coord,casing_radius,initial_head
+w1,0,0,0.5,5000
+w2,50,20,2,linear 5000 -2
