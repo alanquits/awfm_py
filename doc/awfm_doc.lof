@@ -1,5 +1,10 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {1}{\ignorespaces Example of instantiating a Timeseries object.}}{15}{lstnumber.-1.3}
+\contentsline {figure}{\numberline {2}{\ignorespaces Example usage of \emph {Timeseries.append}.}}{15}{lstnumber.-2.6}
+\contentsline {figure}{\numberline {3}{\ignorespaces Example usage of \emph {Timeseries.append} (2).}}{16}{lstnumber.-3.7}
+\contentsline {figure}{\numberline {4}{\ignorespaces \emph {zero\_below\_magnitude} example script.}}{16}{lstnumber.-4.5}
+\contentsline {figure}{\numberline {5}{\ignorespaces \emph {zero\_below\_magnitude} example plots. Original timeseries (left) is modified (right) using a threshold of 20 gpm.}}{16}{lstnumber.-4.5}
 \addvspace {10\p@ }
 \contentsfinish 

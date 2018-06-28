@@ -12,6 +12,11 @@ class TheisDrawdownModel(AbstractAquiferDrawdownModel):
             "T": T
         }
 
+        self.param_setters = {
+            "S": "set_S",
+            "T": "set_T"
+        }
+
     def name(self):
         return "theis"
 
@@ -39,3 +44,9 @@ class TheisDrawdownModel(AbstractAquiferDrawdownModel):
         length_factor = factor_generator("length", units["length"])
         time_factor = factor_generator("time", units["time"])
         self.params["T"] *= (length_factor**2) / time_factor
+
+    def set_S(self, new_S):
+        self.params["S"] = np.abs(new_S)
+
+    def set_T(self, new_T):
+        self.params["T"] = np.abs(new_T)

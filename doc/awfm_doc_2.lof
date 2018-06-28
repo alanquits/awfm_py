@@ -1,0 +1,10 @@
+\addvspace {10pt}
+\addvspace {10pt}
+\addvspace {10pt}
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Example of creating and populating a Timeseries instance}}{5}
+\contentsline {figure}{\numberline {3.2}{\ignorespaces How to check that a timeseries has been populated correctly}}{6}
+\contentsline {figure}{\numberline {3.3}{\ignorespaces \emph {zero\_below\_magnitude} example plots. Original timeseries (left) is modified (right) using a threshold of 20 gpm.}}{6}
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Example usage of \emph {zero\_below\_magnitude}}}{6}
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Original timeseries (left) reduced by \emph {consolidate\_adjacent\_equal\_values}}}{7}
+\contentsline {figure}{\numberline {3.6}{\ignorespaces Original timeseries (left) rounded to the nearest 10 (middle) using \emph {round\_to\_nearest} and then being reduced using \emph {consolidate\_adjacent\_equal\_values}}}{8}
+\contentsline {figure}{\numberline {3.7}{\ignorespaces Example method calls used to calculate values in Figure 3.6\hbox {}}}{8}

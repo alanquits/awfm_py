@@ -1,5 +1,8 @@
 *.pyc
 *.log
 *.aux
+*.toc
+*.lot
+*.lof
 trash/*
 doc/temp/*

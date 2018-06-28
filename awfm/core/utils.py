@@ -66,3 +66,6 @@ def read_wells_from_dataframe(infile, column_map, table_name):
         wells.append(w)
 
     return wells
+
+def float_compare(v1, v2, tol=1e-3):
+    return abs(v1 - v2) < tol

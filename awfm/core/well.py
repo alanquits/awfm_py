@@ -1,11 +1,15 @@
 from .timeseries import Timeseries
 from .transientparameter import ConstantParameter, LinearParameter, param_units_common
 from .units import to_std_units_factor, from_std_units_factor
-
 import numpy as np
+import matplotlib.pylab as plt
+
+def float_compare(v1, v2, tol=1e-3):
+    return abs(v1 - v2) < tol
 
 class Well:
     def __init__(self, name, x, y, rw=1.0):
+        self.errors = []
         self.name = name
         self.x = x
         self.y = y
@@ -23,6 +27,7 @@ class Well:
             "h0": np.array([], dtype='float64'),
             "h": np.array([], dtype='float64')
         }
+        self.pest_windows = []
 
     def __str__(self):
         s = "Well: %s\n" %self.name
@@ -33,6 +38,15 @@ class Well:
         s += "    c       : %s\n" %self.c.to_sql_string()
         return s
 
+    def append_pest_window(self, t0, tf):
+        if self.is_valid_pest_window(t0, tf):
+            self.pest_windows.append([float(t0), float(tf)])
+        else:
+            self.errors.append({
+                    "level": "Warning",
+                    "message": "Invalid pest window from %lf to %lf" %(t0, tf)
+                })
+
     def distance_to_point(self, x, y):
         dx = self.x - x
         dy = self.y - y
@@ -40,6 +54,25 @@ class Well:
 
     def distance_to_well(self, w):
         return self.distance_to_point(w.x, w.y)
+
+    def is_valid_pest_window(self, t0, tf):
+        # Check if pumping is already occurring on at t0
+        initial_pumping = self.Q.value_at_t(t0)
+        
+        if initial_pumping is None: # timeseries is empty or t0 is before start of timeseries
+            pass
+        elif initial_pumping > 0:
+            return False
+        else:
+            pass
+
+        # Check if any pumping begins between t0 and tf
+        for i in range(0, self.Q.size()):
+            if t0 <= self.Q.ts[i] and self.Q.ts[i] < tf:
+                if self.Q.vs[i] > 0:
+                    return False
+
+        return True
 
     def normalize_units(self, factor_generator, units):
         'factor_generator is either to_std_units_factor or from_std_units_factor'
@@ -61,24 +94,44 @@ class Well:
             else:
                 self.mod[key] *= length_factor
 
+        for i in range(0, len(self.pest_windows)):
+            t0, tf = self.pest_windows[i]
+            self.pest_windows[i] = [t0*time_factor, tf*time_factor]
+
     def set_rw(self, rw):
         if rw > 0:
             self.rw = rw
 
     def run_model(self, ts, pumping_wells, aquifer_drawdown_model):
-        # print("running model at well %s" %self.name)
         self.mod["ts"] = ts
         self.mod["s_aq"] = self.model_aquifer_drawdown(ts, pumping_wells, aquifer_drawdown_model)
         self.mod["s_w"] = self.model_well_loss(ts)
         self.mod["h0"] = self.model_h0(ts)
-        self.mod["t"] = self.mod["h0"] - (self.mod["s_aq"] + self.mod["s_w"])
+        self.mod["vs"] = self.mod["h0"] - (self.mod["s_aq"] + self.mod["s_w"])
+
+    def run_pest_aquifer_drawdown_residuals(self, pumping_wells, aquifer_drawdown_model, pest_settings):
+        L_min = pest_settings["L_min"]
+        L_max = pest_settings["L_max"]
+        residuals = np.array([], dtype="float64")
+        for pest_window in self.pest_windows:
+            t0, tf = pest_window
+            obs_h = self.h.extract_by_range(t0, tf)
+            
+            mod_s_aq = Timeseries()
+            mod_s_aq.ts = obs_h.ts     
+            mod_s_aq.vs = self.model_aquifer_drawdown(obs_h.ts, pumping_wells, aquifer_drawdown_model)
+
+            obs_h_avg = obs_h.bourdet_numerical_average(L_min, L_max)
+            mod_s_aq_avg = mod_s_aq.bourdet_numerical_average(L_min, L_max)
+
+            residuals_local = obs_h_avg.vs + mod_s_aq_avg.vs
+            residuals = np.concatenate([residuals, residuals_local])
+
+        return residuals
 
     def model_aquifer_drawdown(self, ts, pumping_wells, aquifer_drawdown_model):
-        # print("\n\nmodel_aquifer_drawdown at %s" %self.name)
-        # input()
         vs = np.zeros([len(ts)])
         for pumping_well in pumping_wells:
-            # print("   ... modeling pumping at %s" %pumping_well.name)
             vs += aquifer_drawdown_model.model_drawdown_from_well(ts, self.x, self.y, pumping_well)
         return vs
 

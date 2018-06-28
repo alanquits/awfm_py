@@ -5,8 +5,13 @@ from awfm.core.dataframe import Dataframe
 from awfm.core.units import to_std_units_factor
 from awfm.core.aquiferdrawdownmodel import TheisDrawdownModel
 
+import matplotlib.pylab as plt
+
 def float_compare(v1, v2, tol=1e-6):
     return abs(v1 - v2) < tol
+
+def relative_error(v1, v2):
+    return abs(v1 - v2)/v1
 
 def get_timeseries_from_file(path):
     ts = Timeseries()
@@ -66,6 +71,50 @@ def test_fetter_pg_172():
 
     return True
 
+def test_fetter_pg_172_pest():
+    model = Model()
+    model.set_units({
+        "length": "feet",
+        "discharge": "gal/min"
+    })
+
+    model.add_well(Well("pumping well", 0, 0))
+    model.add_well(Well("observation well", 824.0, 0))
+
+    observed_drawdown = get_timeseries_from_file("sample_data/fetter_pg172_drawdown_ft.dat")
+    MINUTES_TO_DAYS = to_std_units_factor("time", "minutes") # converts to days
+    observed_drawdown.ts *= MINUTES_TO_DAYS
+    
+    observed_head = Timeseries()
+    observed_head.ts = observed_drawdown.ts
+    observed_head.vs = 0 - observed_drawdown.vs
+    
+
+    model.wells["observation well"].h = observed_head
+    model.wells["observation well"].append_pest_window(6*MINUTES_TO_DAYS, 400*MINUTES_TO_DAYS)
+
+    Q = 220.0
+    pumping_ts = Timeseries()
+    pumping_ts.append(0, Q)
+    model.wells["pumping well"].Q = pumping_ts
+
+    model.aquifer_drawdown_model = TheisDrawdownModel(S=1.0e-4, T=10.0)
+    model.run_pest_aquifer_drawdown()
+    model.run_model()
+
+    S_target = 2.4e-5
+    T_target = 1400.0
+
+    S_best_fit = model.aquifer_drawdown_model.params["S"]
+    T_best_fit = model.aquifer_drawdown_model.params["T"]
+
+    if relative_error(S_target, S_best_fit) < 0.2 and \
+        relative_error(T_target, T_best_fit) < 0.2:
+        return True
+    else:
+        return False
+
+
 def test_well_distance_calcs():
     w1 = Well("w1", 0, 0, 1.0)
     w2 = Well("w2", 50, 0, 1.0)
@@ -107,7 +156,6 @@ def timeseries_test(infile, method, args, outfile):
     ts_original = get_timeseries_from_file(infile)
     ts_modified = getattr(ts_original, method)(*args)
     ts_modified_check = get_timeseries_from_file(outfile)
-    print(ts_modified)
 
     return ts_modified == ts_modified_check
 
@@ -130,3 +178,4 @@ if __name__ == "__main__":
     run_test("test_read_wells_from_dataframe()", test_read_wells_from_dataframe)
     run_test("timeseries_test_series()", timeseries_test_series)
     run_test("test_fetter_pg_172()", test_fetter_pg_172)
+    run_test("test_fetter_pg_172_pest()", test_fetter_pg_172_pest)

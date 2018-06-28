@@ -24,29 +24,29 @@
 
 \hypersetup{colorlinks} % Comment this line if you don't wish to have colored links
 
+\usepackage{textcomp}
 \usepackage{listings} % For code highlighting
-\lstset{
-  backgroundcolor=\color[rgb]{0.98,0.98,0.98},
-  tabsize=4,
-  rulecolor=,
-  language=matlab,
-        basicstyle=\scriptsize,
-        upquote=true,
-        aboveskip={1.5\baselineskip},
-        columns=fixed,
-        showstringspaces=false,
-        extendedchars=true,
-        breaklines=true,
-        prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
-        frame=single,
-        showtabs=false,
-        showspaces=false,
-        showstringspaces=false,
-        identifierstyle=\ttfamily,
-        keywordstyle=\color[rgb]{0,0,1},
-        commentstyle=\color[rgb]{0.133,0.545,0.133},
-        stringstyle=\color[rgb]{0.627,0.126,0.941},
-}
+% \lstset{
+%   backgroundcolor=\color[rgb]{0.98,0.98,0.98},
+%   tabsize=4,
+%   rulecolor=,
+%   language=matlab,
+%         basicstyle=\scriptsize,
+%         aboveskip={1.5\baselineskip},
+%         columns=fixed,
+%         showstringspaces=false,
+%         extendedchars=true,
+%         breaklines=true,
+%         prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+%         frame=single,
+%         showtabs=false,
+%         showspaces=false,
+%         showstringspaces=false,
+%         identifierstyle=\ttfamily,
+%         keywordstyle=\color[rgb]{0,0,1},
+%         commentstyle=\color[rgb]{0.133,0.545,0.133},
+%         stringstyle=\color[rgb]{0.627,0.126,0.941},
+% }
 
 \usepackage{microtype} % Improves character and word spacing
 
@@ -213,14 +213,85 @@ About inverse model
 %----------------------------------------------------------------------------------------
 % CHAPTER: CLASSES
 %----------------------------------------------------------------------------------------
-\chapter{Classes}
+\chapter{Timeseries Class}
 
-\section{Timeseries Class}
+The Timeseries class stores and processes arrays of time-value pairs. Examples of
+Timeseries objects include recorded pumping rates and water levels. Internally, the
+Timeseries class has separate members for holding time and value arrays, each of
+which are numpy arrays.
+
+% \begin{figure}[h]
 \begin{lstlisting}[language=python]
 from awfm.core import Timeseries
 
 ts = Timeseries()
 \end{lstlisting}
+% \caption{Example of instantiating a Timeseries object.}
+% \end{figure}
+
+\section{append}
+The \emph{append} method is used for building a Timeseries object. \emph{append}
+takes two arguments, a time and a value, and appends them to the 
+Timeseries object.
+
+\begin{figure}[h]
+\begin{lstlisting}[language=python]
+from awfm.core import Timeseries
+
+ts = Timeseries()
+ts.append(0, 10)
+ts.append(1, 12)
+ts.append(2, 15)
+\end{lstlisting}
+\caption{Example usage of \emph{Timeseries.append}.}
+\end{figure}
+
+An important restriction to the \emph{append} method is that values
+\textbf{must} be inserted in chronological order. If an attempt is made
+to insert a value that is not in chronological order, \emph{append} will
+simply ignore the request and log the error in Timeseries.errors.
+
+\begin{figure}[h]
+\begin{lstlisting}[language=python]
+from awfm.core import Timeseries
+
+ts = Timeseries()
+ts.append(0, 10)
+ts.append(1, 12)
+ts.append(3, 15)
+ts.append(2, 12)  # This request is not in chronological order and will be ignored.
+\end{lstlisting}
+\caption{Example usage of \emph{Timeseries.append} (2).}
+\end{figure}
+
+
+\section{zero\_below\_magnitude}
+
+\emph{zero\_below\_magnitude} is a method that converts
+any value below some user-specified magnitude to zero. 
+This method is useful for dealing with SCADA systems that record
+small, insignificant values while a production well is turned off. 
+After running this method, the \emph{consolidate\_adjacent\_equal\_values} method
+can be used to collapse a series of "off" values into one record.
+
+\begin{figure}[h]
+\begin{lstlisting}[language=python]
+from awfm.core import Timeseries, io
+
+ts = io.timeseries_from_file("my-timeseries.dat")
+threshold_Q = 20 # gpm
+ts_modified = ts.zero_below_magnitude(threshold_Q)
+\end{lstlisting}
+\caption{\emph{zero\_below\_magnitude} example script.}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=5cm]{python/timeseries_zero_below_magnitude_before.pdf}
+\hspace{\fill}
+\includegraphics[width=5cm]{python/timeseries_zero_below_magnitude_after.pdf}
+\caption{ \emph{zero\_below\_magnitude} example plots. 
+    Original timeseries (left) is modified (right) using a threshold of 20 gpm.}
+\end{figure}
 
 \section{Well Class}
 \lipsum[13-20]
