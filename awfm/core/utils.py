@@ -1,7 +1,27 @@
 from .dataframe import Dataframe
 import os
 from .well import Well
+from .timeseries import Timeseries
 from . import transientparameter as tp
+
+def read_arrays_from_file(p, skipped_rows=1, delimiter=","):
+    ts, vs = [], []
+    rows_skipped = 0
+    with open(p, "r") as f:
+        for line in f:
+            if rows_skipped < skipped_rows:
+                rows_skipped += 1
+                continue
+            t, v = list(map(float, line.split(",")))
+            ts.append(t)
+            vs.append(v)
+    return ts, vs
+
+def read_timeseries_from_file(p, skipped_rows=1, delimiter=","):
+    tseries = Timeseries()
+    for t, v in zip(*read_arrays_from_file(p, skipped_rows, delimiter)):
+        tseries.append(t, v)
+    return tseries
 
 def read_wells_from_dataframe(infile, column_map, table_name):
     # Verify that column_map has all required destinations

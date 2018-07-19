@@ -55,6 +55,10 @@ class Well:
     def distance_to_well(self, w):
         return self.distance_to_point(w.x, w.y)
 
+    def has_valid_model_results(self):
+        return self.h.size() > 0 and \
+            self.h.size() == len(self.mod["s_aq"])
+
     def is_valid_pest_window(self, t0, tf):
         # Check if pumping is already occurring on at t0
         initial_pumping = self.Q.value_at_t(t0)
@@ -128,6 +132,47 @@ class Well:
             residuals = np.concatenate([residuals, residuals_local])
 
         return residuals
+
+    def run_pest_c(self):
+        '''AL: Need to test'''
+        if not self.has_valid_model_results():
+            self.errors.append({
+                    "level": "Warning",
+                    "message": "Well %s must contain model results before h0 can be estimated." %self.name
+                })
+            return
+
+        def objective_function(params_arr):
+            self.c.set_sorted_params_array(params_arr)
+            return self.mod["h"] - self.h.vs
+
+        res = least_squares(objective_function, self.c.get_sorted_params_array(), \
+            method='lm')
+
+    def run_pest_h0(self):
+        '''AL: Need to test'''
+        if not self.has_valid_model_results():
+            self.errors.append({
+                    "level": "Warning",
+                    "message": "Well %s must contain model results before h0 can be estimated." %self.name
+                })
+            return
+
+        def objective_function(params_arr):
+            self.h0.set_sorted_params_array(params_arr)
+            rs = []
+            for i in range(0, len(self.mod["ts"])):
+                Q = self.Q.value_at_t(self.mod["ts"][i])
+                if Q is not None and Q == 0:
+                    h0 = self.h0.value_at_t(self.mod["ts"][i])
+                    wl_obs = self.h.vs[i]
+                    wl_mod = h0 - self.mod["s_aq"][i]
+                    rs.append(wl_obs - wl_mod)
+
+            return np.array(rs)
+
+        res = least_squares(objective_function, self.h0.get_sorted_params_array(), \
+            method='lm')
 
     def model_aquifer_drawdown(self, ts, pumping_wells, aquifer_drawdown_model):
         vs = np.zeros([len(ts)])

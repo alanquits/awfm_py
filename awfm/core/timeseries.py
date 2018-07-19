@@ -166,6 +166,25 @@ class Timeseries:
         else:
             return [fig, ax]
 
+    def project_onto_new_ts(self, new_ts):
+        ts_out = Timeseries()
+        if self.size() == 0:
+            return ts_out
+
+        new_ts_in_range = []
+        t0, tf = self.ts[0], self.ts[-1]
+
+        for i in range(0, len(new_ts)):
+            if t0 <= new_ts[i] and new_ts[i] < tf:
+                new_ts_in_range.append(new_ts[i])
+
+        new_ts_in_range = np.array(new_ts_in_range)
+        new_vs = np.interp(new_ts_in_range, self.ts, self.vs)
+        ts_out = Timeseries()
+        ts_out.ts = new_ts_in_range
+        ts_out.vs = new_vs
+        return ts_out
+
     def sign(self, v):
         if v > 0:
             return 1

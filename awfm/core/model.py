@@ -25,6 +25,18 @@ class Model:
             self.errors = ["Warning", "Attempted to insert a well (%s) without a unique name" %w.name]
         self.wells[w.name] = w
 
+    def apply_to_timeseries(self, series_name, func):
+        for well_name in self.well_names():
+            if series_name.lower() == "q":
+                self.wells[well_name].Q = func(self.wells[well_name].Q)
+            elif series_name.lower() == "h":
+                self.wells[well_name].h = func(self.wells[well_name].h)
+            else:
+                self.errors.append({
+                    "Level": "Warning",
+                    "Message": "model.apply_to_timeseries called with unknown series_name"
+                    })
+
     def normalize_units(self, factor_generator):
         for well_name in self.well_names():
             self.wells[well_name].normalize_units(factor_generator, self.units)
@@ -39,7 +51,9 @@ class Model:
         self.normalize_units(from_std_units_factor)
 
     def run_pest_aquifer_drawdown(self):
+        print("Running parameter estimation on aquifer drawdown model")
         def objective_function(params_arr):
+            print("... ", params_arr)
             self.aquifer_drawdown_model.set_sorted_params_array(params_arr)
             residuals = np.array([], dtype="float64")
             pumping_wells = self.wells_as_list()
